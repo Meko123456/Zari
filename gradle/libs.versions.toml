@@ -1,0 +1,32 @@
+[versions]
+agp = "9.1.1"
+kotlin = "2.3.21"
+composeBom = "2026.06.01"
+activityCompose = "1.13.0"
+lifecycle = "2.10.0"
+kotlinxCoroutines = "1.10.2"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.18.0" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+# kotlin("test") needs the standalone Kotlin plugin, which AGP 9's built-in Kotlin support
+# replaces - so the test artifacts are named explicitly instead.
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+junit = { module = "junit:junit", version = "4.13.2" }
+# Android ships org.json, but the android.jar on the unit-test classpath is stubs that return
+# null. The real library makes the index tests exercise real JSON rather than a stub.
+json = { module = "org.json:json", version = "20240303" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

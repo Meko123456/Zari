@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.github.meko123456.zari.call.CallMonitorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-09-01T16:01:48.435Z" hostname="EXT-A0EL0014.local" time="0.015">
+  <properties/>
+  <testcase name="platform state strings map to states and anything else is ignored" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.007"/>
+  <testcase name="an outgoing call has no ringing state on this side" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.001"/>
+  <testcase name="a missed call is discarded rather than saved as an empty recording" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.002"/>
+  <testcase name="a second call arriving mid-call does not restart the recording" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.002"/>
+  <testcase name="a rejected call after ringing is discarded once and only once" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.0"/>
+  <testcase name="repeated broadcasts of the same state do nothing" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.0"/>
+  <testcase name="an answered incoming call records and is kept" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.0"/>
+  <testcase name="direction is remembered from the start of the call not recomputed at the end" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.0"/>
+  <testcase name="going idle without a call produces nothing" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.0"/>
+  <testcase name="reset clears a call in progress" classname="io.github.meko123456.zari.call.CallMonitorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

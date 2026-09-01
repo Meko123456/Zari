@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.github.meko123456.zari.data.RecordingIndexTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-01T16:01:48.469Z" hostname="EXT-A0EL0014.local" time="0.016">
+  <properties/>
+  <testcase name="a silent recording is recognisable after a round trip" classname="io.github.meko123456.zari.data.RecordingIndexTest" time="0.005"/>
+  <testcase name="a corrupt index costs the metadata but never throws" classname="io.github.meko123456.zari.data.RecordingIndexTest" time="0.001"/>
+  <testcase name="a recording survives a round trip" classname="io.github.meko123456.zari.data.RecordingIndexTest" time="0.001"/>
+  <testcase name="a withheld number round trips as null rather than as the string null" classname="io.github.meko123456.zari.data.RecordingIndexTest" time="0.0"/>
+  <testcase name="a row missing its file name is skipped and the rest are kept" classname="io.github.meko123456.zari.data.RecordingIndexTest" time="0.009"/>
+  <testcase name="an unrecognised direction degrades to unknown instead of failing the whole list" classname="io.github.meko123456.zari.data.RecordingIndexTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,4 @@
+#Tue Sep 01 20:02:51 GET 2026
+base.0=/Users/a1111/AndroidStudioProjects/Zari/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex

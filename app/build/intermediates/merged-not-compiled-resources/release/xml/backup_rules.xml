@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The pre-Android-12 equivalent of data_extraction_rules.xml. Both exist because minSdk is 26 and
+  the platform reads a different file depending on the version — leaving one out means the older
+  path silently falls back to the default, which is "back everything up".
+-->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="file" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+</full-backup-content>

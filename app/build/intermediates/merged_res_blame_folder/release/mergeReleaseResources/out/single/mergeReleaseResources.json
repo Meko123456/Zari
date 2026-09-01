@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "io.github.meko123456.zari.app-release-37:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "io.github.meko123456.zari.app-main-38:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "io.github.meko123456.zari.app-release-37:/drawable_ic_launcher_background.xml.flat",
+        "source": "io.github.meko123456.zari.app-main-38:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "io.github.meko123456.zari.app-release-37:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "io.github.meko123456.zari.app-main-38:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "io.github.meko123456.zari.app-release-37:/xml_file_paths.xml.flat",
+        "source": "io.github.meko123456.zari.app-main-38:/xml/file_paths.xml"
+    },
+    {
+        "merged": "io.github.meko123456.zari.app-release-37:/xml_backup_rules.xml.flat",
+        "source": "io.github.meko123456.zari.app-main-38:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "io.github.meko123456.zari.app-release-37:/xml_data_extraction_rules.xml.flat",
+        "source": "io.github.meko123456.zari.app-main-38:/xml/data_extraction_rules.xml"
+    }
+]
