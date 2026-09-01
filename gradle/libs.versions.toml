@@ -25,7 +25,7 @@ kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version
 junit = { module = "junit:junit", version = "4.13.2" }
 # Android ships org.json, but the android.jar on the unit-test classpath is stubs that return
 # null. The real library makes the index tests exercise real JSON rather than a stub.
-json = { module = "org.json:json", version = "20240303" }
+json = { module = "org.json:json", version = "20260814" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
