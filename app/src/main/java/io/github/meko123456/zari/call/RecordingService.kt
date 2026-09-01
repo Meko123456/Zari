@@ -84,9 +84,21 @@ class RecordingService : Service() {
 
         val foreground = runCatching { startForeground(NOTIFICATION_ID, notification()) }
         if (foreground.isFailure) {
-            // Android 12+ refuses background foreground-service starts without an exemption, and
-            // 14+ adds a microphone-specific eligibility check. Say so, in the app.
-            diagnostics.log("Could not start recording service: ${foreground.exceptionOrNull()?.javaClass?.simpleName}")
+            // Verified on a Galaxy S24 Ultra running Android 16: this is a SecurityException, and
+            // it is by design. Android 14 forbids *starting* a microphone-typed foreground service
+            // from the background, and — unlike the general background-start rule — SYSTEM_ALERT_
+            // WINDOW and battery exemptions do not lift it. There is nothing to configure. The
+            // message says what the user can actually do instead.
+            val cause = foreground.exceptionOrNull()
+            diagnostics.log(
+                if (cause is SecurityException) {
+                    "Android refused to start recording in the background — it does not allow any " +
+                        "app to begin recording a call by itself. Keep Zari on screen during the " +
+                        "call and use \"Record now\"."
+                } else {
+                    "Could not start recording service: ${cause?.javaClass?.simpleName}"
+                },
+            )
             stopSelf()
             return
         }

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="io.github.meko123456.zari.call.CallLogMatchTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-09-01T16:19:49.216Z" hostname="EXT-A0EL0014.local" time="0.001">
+<testsuite name="io.github.meko123456.zari.call.CallLogMatchTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-09-01T16:29:49.181Z" hostname="EXT-A0EL0014.local" time="0.012">
   <properties/>
-  <testcase name="with no mark a missed call from minutes ago is rejected" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
-  <testcase name="a row exactly at the mark is not ours because the mark was already there" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.001"/>
+  <testcase name="with no mark a missed call from minutes ago is rejected" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.007"/>
+  <testcase name="a row exactly at the mark is not ours because the mark was already there" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
   <testcase name="with no mark a row that just ended is accepted" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
   <testcase name="with no mark a stale row is rejected" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
   <testcase name="an outgoing call is matched" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
-  <testcase name="a long ring before answering is still matched" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
+  <testcase name="a long ring before answering is still matched" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.001"/>
   <testcase name="the previous call's row is not mistaken for ours" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
   <testcase name="an answered incoming call is matched even though its row predates the recording" classname="io.github.meko123456.zari.call.CallLogMatchTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>

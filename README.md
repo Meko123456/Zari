@@ -7,7 +7,18 @@ date, the time, the number and — if the number is in your contacts — the nam
 
 ## Read this before expecting it to work
 
-Android deliberately closed call recording to third-party apps, and no app can reopen it:
+Android deliberately closed call recording to third-party apps, and no app can reopen it. There
+are **two** separate walls, and both were measured on a real device:
+
+**1. It cannot start by itself.** Android 14 forbids starting a foreground service of type
+`microphone` from the background — and unlike the general background-start rule, `SYSTEM_ALERT_
+WINDOW` and battery exemptions do **not** lift it. A call arrives, the receiver fires, and
+`startForeground` throws `SecurityException` before any audio is touched. There is nothing to
+configure. So recording is started **by hand, with the app on screen** — on Samsung, float Zari
+over the call in pop-up view and tap *Record now*. The live level meter tells you within a second
+whether audio is arriving.
+
+**2. Even then, the audio may be silence:**
 
 - Since **Android 10**, the `VOICE_CALL` audio source needs `CAPTURE_AUDIO_OUTPUT`, a
   `signature|privileged` permission. Only apps preinstalled in the system image can hold it. A
@@ -30,6 +41,7 @@ call" are separate answers rather than one shrug.
 - Microphone self-test, app in the foreground: **peak 19366**. The microphone is fine.
 - The same source during a live call: **peak 0**. Not quiet — exactly zero, an unbroken run of
   digital silence.
+- Automatic start during a call: **`SecurityException`**, twice, before any audio was touched.
 - The only package on the device holding `CAPTURE_AUDIO_OUTPUT` is
   `com.samsung.android.incallui`. Samsung's own Voice Recorder does not hold it either, so no app
   on the phone — not even the manufacturer's recorder app — can tap call audio.
@@ -51,7 +63,8 @@ enough — but it costs nothing to try, and it is the better recorder when it wo
 
 ## Setup
 
-Three things, all of which the app asks for and explains:
+Three things, all of which the app asks for and explains. The third is only useful on Android 13
+and earlier, where automatic recording is still permitted:
 
 1. **Microphone, phone state, call log and contacts.** The call log is where the number comes
    from; contacts turn it into a name.

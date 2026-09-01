@@ -41,8 +41,14 @@ fun RecordingsScreen(
     setup: List<SetupStep>,
     isSelfTesting: Boolean,
     verdict: RecordingsViewModel.Verdict,
+    manual: RecordingsViewModel.ManualState?,
+    isProbing: Boolean,
+    probeResults: List<Pair<String, Int?>>,
     onSelfTest: () -> Unit,
     onProbeAgain: () -> Unit,
+    onStartManual: () -> Unit,
+    onStopManual: () -> Unit,
+    onProbeNow: () -> Unit,
     onToggle: (Recording) -> Unit,
     onDelete: (Recording) -> Unit,
     onShare: (Recording) -> Unit,
@@ -63,6 +69,17 @@ fun RecordingsScreen(
 
         if (setup.isNotEmpty()) {
             item { SetupCard(setup) }
+        }
+
+        item {
+            RecordNowCard(
+                manual = manual,
+                isProbing = isProbing,
+                probeResults = probeResults,
+                onStart = onStartManual,
+                onStop = onStopManual,
+                onProbe = onProbeNow,
+            )
         }
 
         item { VerdictCard(verdict = verdict, onProbeAgain = onProbeAgain) }
@@ -205,6 +222,81 @@ private fun SetupCard(steps: List<SetupStep>) {
 }
 
 /**
+ * The one control that can actually work on Android 14 and later.
+ *
+ * Automatic recording is not possible: starting microphone capture from the background throws a
+ * SecurityException, and no permission or exemption lifts it for the microphone service type. What
+ * is allowed is recording while the app is on screen — on Samsung, float Zari over the call in
+ * pop-up view and tap Record.
+ *
+ * The live level is the point of the card. It answers "is any audio arriving" within a second,
+ * instead of after the call when the file turns out to be silence.
+ */
+@Composable
+private fun RecordNowCard(
+    manual: RecordingsViewModel.ManualState?,
+    isProbing: Boolean,
+    probeResults: List<Pair<String, Int?>>,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onProbe: () -> Unit,
+) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Record the call you are on", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Android will not let any app start recording a call by itself. Keep Zari on " +
+                    "screen — pop-up view works while you are on a call — and start it here.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (manual != null) {
+                Text(
+                    Format.levelBar(manual.peak),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = if (manual.peak >= Recording.SILENT_THRESHOLD) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                )
+                Text(
+                    "${Format.duration(manual.elapsedMillis)}  ·  ${manual.source}  ·  peak ${manual.peak}" +
+                        if (manual.peak < Recording.SILENT_THRESHOLD) "  ·  nothing is arriving" else "",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(onClick = onStop) { Text("Stop and save") }
+            } else {
+                TextButton(onClick = onStart) { Text("Record now") }
+            }
+
+            HorizontalDivider()
+            Text(
+                "Or measure every audio source Android allows. Do it during a call: outside one " +
+                    "they all work, which is why testing outside a call proves nothing.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onProbe, enabled = !isProbing) {
+                Text(if (isProbing) "Measuring…" else "Measure every source now")
+            }
+            for ((source, peak) in probeResults) {
+                Text(
+                    "$source  ${peak?.let { Format.levelBar(it, 8) + "  " + it } ?: "refused to open"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if ((peak ?: 0) >= Recording.SILENT_THRESHOLD) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
  * States plainly what the app has found out about this phone. A call recorder that cannot record
  * on your device should say so at the top of the screen, not leave you to work it out from a pile
  * of silent files.
@@ -236,7 +328,7 @@ private fun VerdictCard(verdict: RecordingsViewModel.Verdict, onProbeAgain: () -
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    "Every audio source Android allows was tried during a real call and all of " +
+                    "Every audio source Android allows was measured during a real call and all of " +
                         "them returned silence. The microphone itself is fine — the self-test " +
                         "below proves that — so this is the platform refusing, not a fault in the " +
                         "app or a setting you have missed.",

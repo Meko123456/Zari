@@ -4,6 +4,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class FormatTest {
 
@@ -42,5 +43,28 @@ class FormatTest {
         val lateLastNight = today.minusDays(1).atTime(23, 55).atZone(tbilisi).toInstant().toEpochMilli()
         assertEquals("Yesterday", Format.dayLabel(lateLastNight, today, tbilisi))
         assertEquals(today.minusDays(1), Format.dayKey(lateLastNight, tbilisi))
+    }
+
+    @Test
+    fun `a silent source shows an empty meter and any audio shows some bar`() {
+        // The meter's whole job is answering "is anything arriving" at a glance during a call.
+        assertEquals("············", Format.levelBar(0))
+        assertTrue(Format.levelBar(1).startsWith("█"), "even a whisper must show something")
+        assertEquals("████████████", Format.levelBar(32_767))
+    }
+
+    @Test
+    fun `the meter is logarithmic so ordinary speech is not lost at the bottom`() {
+        // A linear meter puts speech at around a tenth of the bar; this must be well past that.
+        val speech = Format.levelBar(3_000).count { it == '█' }
+        assertTrue(speech >= 6, "speech-level audio filled only $speech of 12")
+    }
+
+    @Test
+    fun `the meter never overflows its width`() {
+        for (peak in listOf(0, 1, 400, 5_000, 32_767, 99_999)) {
+            assertEquals(12, Format.levelBar(peak).length, "peak $peak")
+            assertEquals(8, Format.levelBar(peak, width = 8).length, "peak $peak at width 8")
+        }
     }
 }

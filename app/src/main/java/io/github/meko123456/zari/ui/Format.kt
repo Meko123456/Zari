@@ -37,6 +37,21 @@ object Format {
     fun dayKey(millis: Long, zone: ZoneId): LocalDate =
         Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
 
+    /**
+     * Turns a peak amplitude (0..32767) into a short bar, so "is audio arriving" is answerable at
+     * a glance while a call is in progress. Logarithmic, because loudness is: a linear meter
+     * spends its whole range on the loudest few percent and shows nothing for ordinary speech.
+     */
+    fun levelBar(peak: Int, width: Int = 12): String {
+        if (peak <= 0) return "·".repeat(width)
+        val ratio = (peak.coerceAtMost(MAX_AMPLITUDE).toDouble() / MAX_AMPLITUDE)
+        val scaled = kotlin.math.ln(1.0 + 99.0 * ratio) / kotlin.math.ln(100.0)
+        val filled = (scaled * width).toInt().coerceIn(1, width)
+        return "█".repeat(filled) + "·".repeat(width - filled)
+    }
+
+    private const val MAX_AMPLITUDE = 32_767
+
     private fun Long.pad(): String = if (this < 10) "0$this" else toString()
 
     private val MONTHS = listOf(
