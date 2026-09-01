@@ -4,7 +4,7 @@ kotlin = "2.3.21"
 composeBom = "2026.06.01"
 activityCompose = "1.13.0"
 lifecycle = "2.10.0"
-kotlinxCoroutines = "1.10.2"
+kotlinxCoroutines = "1.11.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.18.0" }
