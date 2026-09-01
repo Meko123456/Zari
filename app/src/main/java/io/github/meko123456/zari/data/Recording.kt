@@ -23,9 +23,14 @@ data class Recording(
     val durationMillis: Long,
     val peakAmplitude: Int,
 ) {
-    /** Who to show. Falls back to the number, then to something honest. */
+    /**
+     * Who to show: the contact name if the number is in the address book, otherwise the number
+     * itself — a number you can read and call back is far more use than the word "unknown".
+     * Only a genuinely absent number (withheld by the caller, or a call log that had no row for
+     * this call) falls through to text.
+     */
     val displayName: String
-        get() = contactName ?: number ?: "Unknown number"
+        get() = contactName ?: number ?: "Number withheld"
 
     /**
      * Below this the file is silence, not a quiet call. A real recording of a phone call peaks in

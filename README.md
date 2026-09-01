@@ -25,6 +25,18 @@ so: a silent recording is labelled silent, not served up as a successful one. Th
 five-second microphone self-test, so "the app cannot record" and "Android muted the mic during the
 call" are separate answers rather than one shrug.
 
+### What this measured on a Galaxy S24 Ultra (Android 16, One UI 8.0.5, XSG/UAE)
+
+- Microphone self-test, app in the foreground: **peak 19366**. The microphone is fine.
+- The same source during a live call: **peak 0**. Not quiet — exactly zero, an unbroken run of
+  digital silence.
+- The only package on the device holding `CAPTURE_AUDIO_OUTPUT` is
+  `com.samsung.android.incallui`. Samsung's own Voice Recorder does not hold it either, so no app
+  on the phone — not even the manufacturer's recorder app — can tap call audio.
+
+That is what the verdict card in the app says, with the per-source evidence, once it has probed a
+real call. It is a better answer than a pile of silent files.
+
 **If your phone is a Samsung, check first whether the recorder you already own is merely
 disabled:**
 

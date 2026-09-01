@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.meko123456.zari.data.Diagnostics
 import io.github.meko123456.zari.data.Recording
 import io.github.meko123456.zari.data.RecordingStore
+import io.github.meko123456.zari.data.SourceMemory
 import io.github.meko123456.zari.call.CallDirection
 import io.github.meko123456.zari.call.CallRecorder
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
 
     private val store = RecordingStore(application)
     private val diagnostics = Diagnostics(application)
+    private val sourceMemory = SourceMemory(application)
     private var player: MediaPlayer? = null
 
     val recordings: StateFlow<List<Recording>> = store.recordings
@@ -33,6 +35,10 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
     var isSelfTesting by mutableStateOf(false)
         private set
 
+    /** What the app has established about recording calls on *this* device. */
+    var verdict by mutableStateOf<Verdict>(Verdict.Unknown)
+        private set
+
     init {
         refresh()
     }
@@ -40,6 +46,18 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
     fun refresh() {
         store.reload()
         log = diagnostics.read()
+        verdict = when {
+            sourceMemory.allSilent() -> Verdict.Muted(sourceMemory.lastProbe())
+            sourceMemory.working() != null -> Verdict.Works(sourceMemory.working()!!.name)
+            else -> Verdict.Unknown
+        }
+    }
+
+    /** Forgets the verdict so the next call probes every source again. */
+    fun probeAgain() {
+        sourceMemory.clear()
+        diagnostics.log("Verdict cleared — the next call will try every audio source again")
+        refresh()
     }
 
     /**
@@ -122,6 +140,21 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun fileFor(recording: Recording) = store.fileFor(recording)
+
+    /** The three states this app can honestly be in on a given phone. */
+    sealed interface Verdict {
+        /** Nothing has been established yet: no call has been recorded since installing. */
+        data object Unknown : Verdict
+
+        /** A source was found that hears a live call. */
+        data class Works(val source: String) : Verdict
+
+        /**
+         * Every permitted source was tried during a real call and all read silence. On this phone
+         * no app without system privileges can record a call, and no setting changes that.
+         */
+        data class Muted(val evidence: List<Pair<String, Int>>) : Verdict
+    }
 
     private companion object {
         const val SELF_TEST_SAMPLES = 20

@@ -7,7 +7,30 @@ import android.util.Log
 import java.io.File
 
 /** Which audio source actually worked, which is the single most useful diagnostic this app has. */
-enum class AudioSourceUsed { VOICE_CALL, VOICE_COMMUNICATION, MIC, NONE }
+enum class AudioSourceUsed {
+    VOICE_CALL,
+    VOICE_COMMUNICATION,
+    MIC,
+    VOICE_RECOGNITION,
+    CAMCORDER,
+    UNPROCESSED,
+    DEFAULT,
+    NONE,
+    ;
+
+    /** The platform constant, kept next to the name so the two cannot drift apart. */
+    val platformSource: Int?
+        get() = when (this) {
+            VOICE_CALL -> android.media.MediaRecorder.AudioSource.VOICE_CALL
+            VOICE_COMMUNICATION -> android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION
+            MIC -> android.media.MediaRecorder.AudioSource.MIC
+            VOICE_RECOGNITION -> android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION
+            CAMCORDER -> android.media.MediaRecorder.AudioSource.CAMCORDER
+            UNPROCESSED -> android.media.MediaRecorder.AudioSource.UNPROCESSED
+            DEFAULT -> android.media.MediaRecorder.AudioSource.DEFAULT
+            NONE -> null
+        }
+}
 
 /**
  * Wraps [MediaRecorder] and tries the audio sources in descending order of usefulness.
@@ -31,10 +54,15 @@ class CallRecorder(private val context: Context) {
 
     val isRecording: Boolean get() = recorder != null
 
-    /** Starts recording into [target]. Returns the failure of the last attempt if all fail. */
-    fun start(target: File): Result<AudioSourceUsed> {
+    /**
+     * Starts recording into [target]. When [preferred] is given, only that source is used — the
+     * probe has already established it is the one that hears anything, and falling back silently
+     * would hide a change in device behaviour.
+     */
+    fun start(target: File, preferred: AudioSourceUsed? = null): Result<AudioSourceUsed> {
         var lastError: Throwable? = null
-        for ((source, label) in SOURCES) {
+        val order = preferred?.platformSource?.let { listOf(it to preferred) } ?: SOURCES
+        for ((source, label) in order) {
             val attempt = runCatching { begin(source, target) }
             if (attempt.isSuccess) {
                 sourceUsed = label

@@ -25,12 +25,28 @@ data class CallerInfo(
  * the direction and the network's duration too, which the broadcast never did.
  *
  * The entry is written by the platform *around* the moment the call ends, so a single immediate
- * read frequently comes back with the previous call. Hence [readAfterCall] takes the time the
- * call started and rejects anything older than that, and the service retries.
+ * read frequently comes back with the previous call. The service therefore takes a [newestDate]
+ * mark before recording starts and only accepts a row newer than it — see [CallLogMatch] for why
+ * comparing against the recording's start time instead was wrong.
  */
 class CallerResolver(private val context: Context) {
 
-    fun readAfterCall(callStartedAtMillis: Long): CallerInfo? {
+    /** Newest call-log timestamp right now, used as the "before the call" mark. */
+    fun newestDate(): Long? {
+        if (!granted(Manifest.permission.READ_CALL_LOG)) return null
+        val cursor = runCatching {
+            context.contentResolver.query(
+                CallLog.Calls.CONTENT_URI,
+                arrayOf(CallLog.Calls.DATE),
+                null,
+                null,
+                "${CallLog.Calls.DATE} DESC LIMIT 1",
+            )
+        }.getOrNull() ?: return null
+        cursor.use { return if (it.moveToFirst()) it.getLong(0) else null }
+    }
+
+    fun readAfterCall(markBeforeCall: Long?): CallerInfo? {
         if (!granted(Manifest.permission.READ_CALL_LOG)) return null
         val columns = arrayOf(
             CallLog.Calls.NUMBER,
@@ -51,12 +67,14 @@ class CallerResolver(private val context: Context) {
         cursor.use {
             if (!it.moveToFirst()) return null
             val date = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DATE))
-            // Older than the call we just recorded: the platform has not written ours yet.
-            if (date + CLOCK_SLACK_MILLIS < callStartedAtMillis) return null
+            val duration = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DURATION))
+            if (!CallLogMatch.isOurs(date, duration, markBeforeCall, System.currentTimeMillis())) {
+                // Still the previous call's row: the platform has not written ours yet.
+                return null
+            }
             val number = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.NUMBER))
                 ?.takeIf { value -> value.isNotBlank() }
             val type = it.getInt(it.getColumnIndexOrThrow(CallLog.Calls.TYPE))
-            val duration = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DURATION))
             return CallerInfo(
                 number = number,
                 direction = when (type) {
@@ -95,8 +113,4 @@ class CallerResolver(private val context: Context) {
     private fun granted(permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-    private companion object {
-        /** The log's timestamp and ours can disagree by a second or two. */
-        const val CLOCK_SLACK_MILLIS = 3_000L
-    }
 }

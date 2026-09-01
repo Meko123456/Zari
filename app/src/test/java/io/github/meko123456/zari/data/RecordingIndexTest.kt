@@ -30,7 +30,19 @@ class RecordingIndexTest {
         val decoded = RecordingIndex.decode(RecordingIndex.encode(listOf(anonymous))).single()
         assertNull(decoded.number)
         assertNull(decoded.contactName)
-        assertEquals("Unknown number", decoded.displayName)
+        assertEquals("Number withheld", decoded.displayName, "only a genuinely absent number is text")
+    }
+
+    @Test
+    fun `a caller who is not in contacts is shown by number and never as a word`() {
+        // A number you can read and ring back is more use than "unknown".
+        val stranger = recording.copy(contactName = null)
+        assertEquals("+995322123456", stranger.displayName)
+    }
+
+    @Test
+    fun `a caller who is in contacts is shown by name`() {
+        assertEquals("Giorgi", recording.displayName)
     }
 
     @Test

@@ -14,6 +14,7 @@ import io.github.meko123456.zari.data.Diagnostics
 import io.github.meko123456.zari.data.FileNames
 import io.github.meko123456.zari.data.Recording
 import io.github.meko123456.zari.data.RecordingStore
+import io.github.meko123456.zari.data.SourceMemory
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,11 +42,15 @@ class RecordingService : Service() {
     private lateinit var diagnostics: Diagnostics
     private lateinit var resolver: CallerResolver
     private lateinit var recorder: CallRecorder
+    private lateinit var sourceMemory: SourceMemory
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var levelJob: Job? = null
     private var startedAtMillis = 0L
     private var direction = CallDirection.UNKNOWN
+
+    /** Newest call-log timestamp before this call, so its own row can be told apart afterwards. */
+    private var callLogMark: Long? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -53,6 +58,7 @@ class RecordingService : Service() {
         diagnostics = Diagnostics(this)
         resolver = CallerResolver(this)
         recorder = CallRecorder(this)
+        sourceMemory = SourceMemory(this)
         createChannel()
     }
 
@@ -85,9 +91,13 @@ class RecordingService : Service() {
             return
         }
 
+        // Taken before recording, because afterwards there is no way to tell our row from the
+        // previous call's if the platform has not written ours yet.
+        callLogMark = resolver.newestDate()
+
         val target = store.newFile(PENDING_FILE)
         target.delete()
-        val started = recorder.start(target)
+        val started = recorder.start(target, sourceMemory.working())
         started.fold(
             onSuccess = { source -> diagnostics.log("Recording started via $source") },
             onFailure = { error ->
@@ -104,6 +114,50 @@ class RecordingService : Service() {
                 delay(LEVEL_INTERVAL_MILLIS)
             }
         }
+
+        // If nothing is arriving a few seconds in, find out whether *any* source hears this call
+        // before the call is over and the chance is gone.
+        if (sourceMemory.working() == null && !sourceMemory.allSilent()) {
+            scope.launch { probeSourcesDuringCall() }
+        }
+    }
+
+    /**
+     * Tries every permitted audio source *while the call is live*, because that is the only time
+     * the answer means anything: outside a call every source works, which is exactly why a
+     * self-test cannot tell you whether call recording works.
+     *
+     * Runs once per device. Either a source hears something and is remembered for every later
+     * call, or the verdict is recorded and the app stops pretending.
+     */
+    private suspend fun probeSourcesDuringCall() {
+        delay(PROBE_DELAY_MILLIS)
+        if (!recorder.isRecording) return
+        if (recorder.sampleLevel() >= MicProbe.AUDIBLE_THRESHOLD) {
+            // The source already running is fine; nothing to look for.
+            sourceMemory.remember(recorder.sourceUsed)
+            return
+        }
+
+        val probe = MicProbe()
+        val results = mutableListOf<Pair<AudioSourceUsed, Int?>>()
+        for ((platform, label) in MicProbe.CANDIDATES) {
+            if (!recorder.isRecording) return // call ended mid-probe
+            val peak = probe.peakOf(platform, MicProbe.PROBE_MILLIS)
+            results += label to peak
+            if (peak != null && peak >= MicProbe.AUDIBLE_THRESHOLD) {
+                sourceMemory.remember(label)
+                diagnostics.log("$label hears this call (peak $peak) — using it from now on")
+                return
+            }
+        }
+        sourceMemory.rememberAllSilent(results)
+        diagnostics.log(
+            "Tried every audio source during this call and all read silence: " +
+                results.joinToString(", ") { (source, peak) ->
+                    "$source=${peak?.toString() ?: "refused"}"
+                },
+        )
     }
 
     private fun finishRecording(keep: Boolean) {
@@ -166,9 +220,10 @@ class RecordingService : Service() {
      */
     private suspend fun resolveWithRetries(): CallerInfo? {
         repeat(RESOLVE_ATTEMPTS) {
-            resolver.readAfterCall(startedAtMillis)?.let { return it }
+            resolver.readAfterCall(callLogMark)?.let { return it }
             delay(RESOLVE_INTERVAL_MILLIS)
         }
+        diagnostics.log("The call log had no new entry for this call — saved without a number")
         return null
     }
 
@@ -211,8 +266,11 @@ class RecordingService : Service() {
         private const val NOTIFICATION_ID = 42
         private const val PENDING_FILE = "pending.m4a"
         private const val LEVEL_INTERVAL_MILLIS = 250L
-        private const val RESOLVE_ATTEMPTS = 8
-        private const val RESOLVE_INTERVAL_MILLIS = 400L
+        private const val RESOLVE_ATTEMPTS = 12
+        private const val RESOLVE_INTERVAL_MILLIS = 500L
+
+        /** Long enough to be sure the call is properly up before judging the level. */
+        private const val PROBE_DELAY_MILLIS = 3_000L
 
         const val ACTION_START = "io.github.meko123456.zari.START"
         const val ACTION_STOP = "io.github.meko123456.zari.STOP"

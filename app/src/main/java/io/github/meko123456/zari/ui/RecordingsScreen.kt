@@ -40,7 +40,9 @@ fun RecordingsScreen(
     log: List<Diagnostics.Entry>,
     setup: List<SetupStep>,
     isSelfTesting: Boolean,
+    verdict: RecordingsViewModel.Verdict,
     onSelfTest: () -> Unit,
+    onProbeAgain: () -> Unit,
     onToggle: (Recording) -> Unit,
     onDelete: (Recording) -> Unit,
     onShare: (Recording) -> Unit,
@@ -62,6 +64,8 @@ fun RecordingsScreen(
         if (setup.isNotEmpty()) {
             item { SetupCard(setup) }
         }
+
+        item { VerdictCard(verdict = verdict, onProbeAgain = onProbeAgain) }
 
         item { SelfTestCard(isSelfTesting = isSelfTesting, onSelfTest = onSelfTest) }
 
@@ -195,6 +199,65 @@ private fun SetupCard(steps: List<SetupStep>) {
                         TextButton(onClick = step.action) { Text("Open settings") }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * States plainly what the app has found out about this phone. A call recorder that cannot record
+ * on your device should say so at the top of the screen, not leave you to work it out from a pile
+ * of silent files.
+ */
+@Composable
+private fun VerdictCard(verdict: RecordingsViewModel.Verdict, onProbeAgain: () -> Unit) {
+    when (verdict) {
+        RecordingsViewModel.Verdict.Unknown -> Unit
+
+        is RecordingsViewModel.Verdict.Works -> Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Recording works on this phone", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Using the ${verdict.source} audio source. Turn on speakerphone to capture " +
+                        "the other side as well.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+
+        is RecordingsViewModel.Verdict.Muted -> Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "This phone will not let any app record calls",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    "Every audio source Android allows was tried during a real call and all of " +
+                        "them returned silence. The microphone itself is fine — the self-test " +
+                        "below proves that — so this is the platform refusing, not a fault in the " +
+                        "app or a setting you have missed.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                if (verdict.evidence.isNotEmpty()) {
+                    Text(
+                        verdict.evidence.joinToString("   ") { (source, peak) ->
+                            "$source ${if (peak < 0) "refused" else "peak $peak"}"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    "What does work: your phone's own recorder, if your region's firmware enables " +
+                        "it; putting the call on speakerphone and recording on a second device; or " +
+                        "a business VoIP line that records on the server.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(onClick = onProbeAgain) { Text("Try every source again") }
             }
         }
     }
