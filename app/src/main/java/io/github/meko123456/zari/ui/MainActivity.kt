@@ -89,6 +89,7 @@ class MainActivity : ComponentActivity() {
                         manual = vm.manual,
                         isProbing = vm.isProbing,
                         probeResults = vm.probeResults,
+                        probeWasOutsideCall = vm.probeWasOutsideCall,
                         onSelfTest = vm::selfTest,
                         onProbeAgain = vm::probeAgain,
                         onStartManual = vm::startManual,

@@ -44,6 +44,7 @@ fun RecordingsScreen(
     manual: RecordingsViewModel.ManualState?,
     isProbing: Boolean,
     probeResults: List<Pair<String, Int?>>,
+    probeWasOutsideCall: Boolean,
     onSelfTest: () -> Unit,
     onProbeAgain: () -> Unit,
     onStartManual: () -> Unit,
@@ -76,6 +77,7 @@ fun RecordingsScreen(
                 manual = manual,
                 isProbing = isProbing,
                 probeResults = probeResults,
+                probeWasOutsideCall = probeWasOutsideCall,
                 onStart = onStartManual,
                 onStop = onStopManual,
                 onProbe = onProbeNow,
@@ -237,6 +239,7 @@ private fun RecordNowCard(
     manual: RecordingsViewModel.ManualState?,
     isProbing: Boolean,
     probeResults: List<Pair<String, Int?>>,
+    probeWasOutsideCall: Boolean,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onProbe: () -> Unit,
@@ -280,6 +283,14 @@ private fun RecordNowCard(
             )
             TextButton(onClick = onProbe, enabled = !isProbing) {
                 Text(if (isProbing) "Measuring…" else "Measure every source now")
+            }
+            if (probeResults.isNotEmpty() && probeWasOutsideCall) {
+                Text(
+                    "Measured with no call in progress, so this says nothing about call " +
+                        "recording — every source works outside a call. Run it again during one.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
             for ((source, peak) in probeResults) {
                 Text(

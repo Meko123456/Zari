@@ -48,6 +48,13 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
     var probeResults by mutableStateOf<List<Pair<String, Int?>>>(emptyList())
         private set
 
+    /**
+     * True when the last probe ran with no call in progress. Those numbers say nothing about
+     * call recording — every source works outside a call — so they are shown but not believed.
+     */
+    var probeWasOutsideCall by mutableStateOf(false)
+        private set
+
     var isProbing by mutableStateOf(false)
         private set
 
@@ -201,6 +208,11 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
         if (isProbing) return
         isProbing = true
         probeResults = emptyList()
+        // The verdict is only meaningful if a call is actually up. Measuring in silence and then
+        // concluding "recording works on this phone" is precisely the wrong answer, and the app
+        // drew it once before this check existed.
+        val inCall = callInProgress()
+        probeWasOutsideCall = !inCall
         viewModelScope.launch {
             val probe = MicProbe()
             val results = mutableListOf<Pair<AudioSourceUsed, Int?>>()
@@ -210,19 +222,33 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
                 probeResults = results.map { (source, value) -> source.name to value }
             }
             val winner = results.firstOrNull { (_, peak) -> peak != null && peak >= MicProbe.AUDIBLE_THRESHOLD }
-            if (winner != null) {
-                sourceMemory.remember(winner.first)
-                diagnostics.log("Probe: ${winner.first} hears audio (peak ${winner.second})")
-            } else {
-                sourceMemory.rememberAllSilent(results)
-                diagnostics.log(
-                    "Probe: every source silent — " +
-                        results.joinToString(", ") { (s, p) -> "$s=${p?.toString() ?: "refused"}" },
+            val summary = results.joinToString(", ") { (s, p) -> "$s=${p?.toString() ?: "refused"}" }
+            when {
+                !inCall -> diagnostics.log(
+                    "Probe with no call in progress (proves nothing about call recording): $summary",
                 )
+                winner != null -> {
+                    sourceMemory.remember(winner.first)
+                    diagnostics.log("Probe during a call: ${winner.first} hears audio (peak ${winner.second})")
+                }
+                else -> {
+                    sourceMemory.rememberAllSilent(results)
+                    diagnostics.log("Probe during a call: every source silent — $summary")
+                }
             }
             isProbing = false
             refresh()
         }
+    }
+
+    /** Whether a call is up right now, which is what makes a probe worth believing. */
+    private fun callInProgress(): Boolean {
+        val telephony = getApplication<Application>()
+            .getSystemService(android.telephony.TelephonyManager::class.java) ?: return false
+        return runCatching {
+            @Suppress("DEPRECATION")
+            telephony.callState != android.telephony.TelephonyManager.CALL_STATE_IDLE
+        }.getOrDefault(false)
     }
 
     private suspend fun resolveWithRetries(mark: Long?): io.github.meko123456.zari.call.CallerInfo? {

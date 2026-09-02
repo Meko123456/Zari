@@ -1,8 +1,0 @@
-io.github.meko123456.zari.app-pngs-0 /Users/a1111/AndroidStudioProjects/Zari/app/build/generated/res/pngs/release
-io.github.meko123456.zari.app-updated_navigation_xml-1 /Users/a1111/AndroidStudioProjects/Zari/app/build/generated/updated_navigation_xml/release
-io.github.meko123456.zari.app-packageReleaseResources-2 /Users/a1111/AndroidStudioProjects/Zari/app/build/intermediates/incremental/release/packageReleaseResources/merged.dir
-io.github.meko123456.zari.app-packageReleaseResources-3 /Users/a1111/AndroidStudioProjects/Zari/app/build/intermediates/incremental/release/packageReleaseResources/stripped.dir
-io.github.meko123456.zari.app-merged-not-compiled-resources-4 /Users/a1111/AndroidStudioProjects/Zari/app/build/intermediates/merged-not-compiled-resources/release
-io.github.meko123456.zari.app-release-5 /Users/a1111/AndroidStudioProjects/Zari/app/build/intermediates/merged_res/release/mergeReleaseResources
-io.github.meko123456.zari.app-main-6 /Users/a1111/AndroidStudioProjects/Zari/app/src/main/res
-io.github.meko123456.zari.app-release-7 /Users/a1111/AndroidStudioProjects/Zari/app/src/release/res
