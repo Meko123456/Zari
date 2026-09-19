@@ -5,15 +5,12 @@ plugins {
 
 android {
     namespace = "io.github.meko123456.zari"
-    // AndroidX now ships AARs whose metadata demands compileSdk 37. Compiling against a newer
-    // platform only widens the API surface available at compile time; targetSdk stays at 36
-    // until the behaviour changes it opts into have been reviewed.
     compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.meko123456.zari"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0-dev"
     }
