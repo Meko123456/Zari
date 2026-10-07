@@ -18,11 +18,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import io.github.meko123456.zari.call.CallDirection
 import io.github.meko123456.zari.data.Diagnostics
 import io.github.meko123456.zari.data.Recording
@@ -31,6 +35,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 /** The list: every recording, newest first, grouped by day. */
 @Composable
@@ -55,9 +60,19 @@ fun RecordingsScreen(
     onShare: (Recording) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val zone = remember { ZoneId.systemDefault() }
-    val today = remember { LocalDate.now(zone) }
-    val clock = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    // Read again each time the screen resumes. Remembered once, they held the moment the list was
+    // first drawn: left open past midnight, it still called yesterday's recordings "Today" and put
+    // a date over the new ones, and after a flight it kept the old zone's days and times.
+    var zone by remember { mutableStateOf(ZoneId.systemDefault()) }
+    var today by remember { mutableStateOf(LocalDate.now(zone)) }
+    LifecycleResumeEffect(Unit) {
+        zone = ZoneId.systemDefault()
+        today = LocalDate.now(zone)
+        onPauseOrDispose { }
+    }
+    val clock = remember(zone) {
+        SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = TimeZone.getTimeZone(zone) }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
