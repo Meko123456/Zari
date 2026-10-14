@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import io.github.meko123456.zari.call.CallDirection
@@ -169,10 +170,15 @@ private fun RecordingRow(
                     modifier = Modifier.padding(end = 10.dp),
                 )
                 Column(Modifier.fillMaxWidth(0.72f)) {
+                    // One line ending in "…", as much of the name as fits. With soft wrap and no
+                    // ellipsis, "Aleksandre Kochlamazashvili-Grigolashvili" broke after the first
+                    // name and the line limit dropped the rest without a sign: a different name.
                     Text(
                         recording.displayName,
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     // Show the number as well when a contact name replaced it: the name answers
                     // "who", the number answers "which of their numbers".
