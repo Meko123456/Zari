@@ -1,5 +1,6 @@
 package io.github.meko123456.zari.ui
 
+import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -63,16 +65,21 @@ fun RecordingsScreen(
 ) {
     // Read again each time the screen resumes. Remembered once, they held the moment the list was
     // first drawn: left open past midnight, it still called yesterday's recordings "Today" and put
-    // a date over the new ones, and after a flight it kept the old zone's days and times.
+    // a date over the new ones, and after a flight it kept the old zone's days and times. The
+    // phone's 12/24-hour setting is read the same way, so a time reads as the status bar does.
+    val context = LocalContext.current
     var zone by remember { mutableStateOf(ZoneId.systemDefault()) }
     var today by remember { mutableStateOf(LocalDate.now(zone)) }
+    var is24Hour by remember { mutableStateOf(DateFormat.is24HourFormat(context)) }
     LifecycleResumeEffect(Unit) {
         zone = ZoneId.systemDefault()
         today = LocalDate.now(zone)
+        is24Hour = DateFormat.is24HourFormat(context)
         onPauseOrDispose { }
     }
-    val clock = remember(zone) {
-        SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = TimeZone.getTimeZone(zone) }
+    val clock = remember(zone, is24Hour) {
+        SimpleDateFormat(if (is24Hour) "HH:mm" else "h:mm a", Locale.getDefault())
+            .apply { timeZone = TimeZone.getTimeZone(zone) }
     }
 
     LazyColumn(
@@ -135,7 +142,7 @@ fun RecordingsScreen(
         }
 
         if (log.isNotEmpty()) {
-            item { LogCard(log) }
+            item { LogCard(log, is24Hour) }
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
@@ -431,8 +438,10 @@ private fun EmptyCard(hasSetupWork: Boolean) {
 }
 
 @Composable
-private fun LogCard(log: List<Diagnostics.Entry>) {
-    val stamp = remember { SimpleDateFormat("dd MMM HH:mm", Locale.getDefault()) }
+private fun LogCard(log: List<Diagnostics.Entry>, is24Hour: Boolean) {
+    val stamp = remember(is24Hour) {
+        SimpleDateFormat(if (is24Hour) "dd MMM HH:mm" else "dd MMM h:mm a", Locale.getDefault())
+    }
     Card(
         modifier = Modifier.padding(top = 12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
