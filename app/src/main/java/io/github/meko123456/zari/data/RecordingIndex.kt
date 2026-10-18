@@ -35,6 +35,9 @@ object RecordingIndex {
         return array.toString()
     }
 
+    /** Whether [json] is something [decode] can read: nothing at all, or an array of rows. */
+    fun readable(json: String): Boolean = json.isBlank() || runCatching { JSONArray(json) }.isSuccess
+
     fun decode(json: String): List<Recording> {
         if (json.isBlank()) return emptyList()
         val array = runCatching { JSONArray(json) }.getOrNull() ?: return emptyList()

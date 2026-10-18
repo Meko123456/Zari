@@ -75,6 +75,20 @@ class RecordingStore(context: Context) {
             // Only succeeds once the directory is empty, which is exactly the condition to remove it.
             from.delete()
         }
+
+        /**
+         * Copies an index that will not parse to `index.json.unreadable`, once, before anything is
+         * written over it.
+         *
+         * An unreadable index reads as no rows, and the next recording or delete then saved an index of
+         * what was left over the one that listed every earlier call. The audio files stay either way,
+         * but who each call was with and when are only in the index, and this keeps them to be read
+         * back. Only the first copy is kept: it is the one that was really the user's.
+         */
+        internal fun keepUnreadable(index: File) {
+            val copy = File(index.parentFile, index.name + ".unreadable")
+            if (!copy.exists()) runCatching { index.copyTo(copy) }
+        }
     }
 
     fun fileFor(recording: Recording): File = File(root, recording.fileName)
@@ -86,6 +100,7 @@ class RecordingStore(context: Context) {
 
     fun reload() {
         val stored = runCatching { indexFile.readText() }.getOrDefault("")
+        if (!RecordingIndex.readable(stored)) keepUnreadable(indexFile)
         // Only list recordings whose audio is actually still there. A row pointing at a deleted
         // file is worse than no row: it plays silence and looks like a bug in the recorder.
         _recordings.value = RecordingIndex.decode(stored)
