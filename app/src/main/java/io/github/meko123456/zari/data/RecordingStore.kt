@@ -1,7 +1,9 @@
 package io.github.meko123456.zari.data
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import java.io.File
+import java.time.ZoneId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -103,14 +105,31 @@ class RecordingStore(context: Context) {
         if (!RecordingIndex.readable(stored)) keepUnreadable(indexFile)
         // Only list recordings whose audio is actually still there. A row pointing at a deleted
         // file is worse than no row: it plays silence and looks like a bug in the recorder.
-        _recordings.value = RecordingIndex.decode(stored)
-            .filter { File(root, it.fileName).exists() }
+        val listed = RecordingIndex.decode(stored).filter { File(root, it.fileName).exists() }
+        // And every recording that is there: one the index lost is rebuilt from its file name, and
+        // the index written again, so the next recording adds to it instead of replacing it.
+        val all = RecoveredRecordings.merge(listed, root.list().orEmpty().asList(), ZoneId.systemDefault(), ::durationOf)
             .sortedByDescending { it.startedAtMillis }
+        if (all.size > listed.size) persist(all) else _recordings.value = all
     }
 
     fun add(recording: Recording) {
-        val updated = (_recordings.value + recording).sortedByDescending { it.startedAtMillis }
+        // A reload between the file landing and this call has already rebuilt a row for it.
+        val updated = (_recordings.value.filterNot { it.fileName == recording.fileName } + recording)
+            .sortedByDescending { it.startedAtMillis }
         persist(updated)
+    }
+
+    private fun durationOf(fileName: String): Long {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(File(root, fileName).path)
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+        } catch (unreadable: RuntimeException) {
+            0L
+        } finally {
+            retriever.release()
+        }
     }
 
     fun delete(recording: Recording) {

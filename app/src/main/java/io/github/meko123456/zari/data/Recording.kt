@@ -40,5 +40,11 @@ data class Recording(
 
     companion object {
         const val SILENT_THRESHOLD = 400
+
+        /**
+         * The peak of a row rebuilt from a file name ([RecoveredRecordings]): nothing measured it, so
+         * it is the loudest a sample can be rather than a guess that would call the call silent.
+         */
+        const val PEAK_NOT_MEASURED = 32_767
     }
 }

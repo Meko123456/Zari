@@ -5,9 +5,9 @@ import io.github.meko123456.zari.call.CallDirection
 /**
  * Builds the recording file name.
  *
- * The name carries the metadata on purpose: sorted date first, then who, then direction. If the
- * JSON index is ever lost the files are still self-describing in any file manager — which is the
- * difference between losing an index and losing the recordings.
+ * The name carries the metadata on purpose: sorted date first, then direction, then who. If the
+ * JSON index is ever lost the files still describe themselves, and [RecoveredRecordings] reads them
+ * back into the list — which is the difference between losing an index and losing the recordings.
  */
 object FileNames {
 
