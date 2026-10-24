@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -45,10 +46,19 @@ class MainActivity : ComponentActivity() {
                 val vm: RecordingsViewModel = viewModel()
                 val recordings by vm.recordings.collectAsStateWithLifecycle()
                 var permissionTick by remember { mutableIntStateOf(0) }
+                // A refusal with no rationale left means Android has stopped asking for it: the
+                // request answers no at once, so the setup button looked dead. Then the app's
+                // settings page is the only way to allow it.
+                var permissionsBlocked by remember { mutableStateOf(false) }
 
                 val requestPermissions = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions(),
-                ) { permissionTick++ }
+                ) { result ->
+                    permissionTick++
+                    permissionsBlocked = result.any { (permission, allowed) ->
+                        !allowed && !shouldShowRequestPermissionRationale(permission)
+                    }
+                }
 
                 LaunchedEffect(Unit) {
                     val missing = REQUIRED.filterNot { granted(it) }
@@ -58,10 +68,14 @@ class MainActivity : ComponentActivity() {
                 // Re-read on every resume: permissions and the overlay grant change outside the
                 // app, and a recording can land while the app is open.
                 val tick = resumeTick + permissionTick
-                val setup = remember(tick) {
+                val setup = remember(tick, permissionsBlocked) {
                     setupSteps(
+                        permissionsBlocked = permissionsBlocked,
                         onRequestPermissions = {
                             requestPermissions.launch(REQUIRED.filterNot { granted(it) }.toTypedArray())
+                        },
+                        onOpenAppSettings = {
+                            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName".toUri()))
                         },
                         onOpenOverlay = {
                             startActivity(
@@ -115,18 +129,29 @@ class MainActivity : ComponentActivity() {
 
     /** What is still missing, phrased as things to do rather than permissions to grant. */
     private fun setupSteps(
+        permissionsBlocked: Boolean,
         onRequestPermissions: () -> Unit,
+        onOpenAppSettings: () -> Unit,
         onOpenOverlay: () -> Unit,
         onOpenBattery: () -> Unit,
     ): List<SetupStep> {
         val steps = mutableListOf<SetupStep>()
         val missing = REQUIRED.filterNot { granted(it) }
         if (missing.isNotEmpty()) {
-            steps += SetupStep(
-                title = "Allow the microphone, phone state, call log and contacts",
-                why = "The call log is where the number comes from; contacts turn it into a name.",
-                action = onRequestPermissions,
-            )
+            steps += if (permissionsBlocked) {
+                SetupStep(
+                    title = "Allow the microphone, phone state, call log and contacts",
+                    why = "Android won't ask again. Allow them in Zari's settings, under Permissions.",
+                    action = onOpenAppSettings,
+                )
+            } else {
+                SetupStep(
+                    title = "Allow the microphone, phone state, call log and contacts",
+                    why = "The call log is where the number comes from; contacts turn it into a name.",
+                    action = onRequestPermissions,
+                    label = "Allow",
+                )
+            }
         }
         if (!Settings.canDrawOverlays(this)) {
             steps += SetupStep(

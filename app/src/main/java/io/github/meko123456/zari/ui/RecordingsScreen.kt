@@ -249,7 +249,13 @@ private fun RecordingRow(
 }
 
 /** One thing the user has to grant, and why. */
-data class SetupStep(val title: String, val why: String, val action: (() -> Unit)?)
+/** One thing to set up. [label] says what the button does: most open a settings page, one asks. */
+data class SetupStep(
+    val title: String,
+    val why: String,
+    val action: (() -> Unit)?,
+    val label: String = "Open settings",
+)
 
 @Composable
 private fun SetupCard(steps: List<SetupStep>) {
@@ -266,7 +272,7 @@ private fun SetupCard(steps: List<SetupStep>) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (step.action != null) {
-                        TextButton(onClick = step.action) { Text("Open settings") }
+                        TextButton(onClick = step.action) { Text(step.label) }
                     }
                 }
             }
