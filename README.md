@@ -7,8 +7,7 @@ date, the time, the number and — if the number is in your contacts — the nam
 
 ## Read this before expecting it to work
 
-Android deliberately closed call recording to third-party apps, and no app can reopen it. There
-are **two** separate walls, and both were measured on a real device:
+Android deliberately closed call recording to third-party apps, and no app can reopen it. There are **two** separate walls, and both were measured on a real device:
 
 **1. It cannot start by itself.** Android 14 forbids starting a foreground service of type
 `microphone` from the background — and unlike the general background-start rule, `SYSTEM_ALERT_
