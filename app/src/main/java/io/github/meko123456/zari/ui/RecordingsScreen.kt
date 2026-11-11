@@ -28,11 +28,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import io.github.meko123456.zari.call.CallDirection
+import io.github.meko123456.zari.call.MicProbe
 import io.github.meko123456.zari.data.Diagnostics
 import io.github.meko123456.zari.data.Recording
 import java.text.SimpleDateFormat
@@ -341,14 +346,10 @@ private fun RecordNowCard(
             TextButton(onClick = onProbe, enabled = !isProbing) {
                 Text(if (isProbing) "Measuring…" else "Measure every source now")
             }
-            if (probeResults.isNotEmpty() && probeWasOutsideCall) {
-                Text(
-                    "Measured with no call in progress, so this says nothing about call " +
-                        "recording — every source works outside a call. Run it again during one.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
+            // What the measuring is doing and found, said to TalkBack as it changes: the rows
+            // below are the detail, this is the answer.
+            val status = ProbeStatus.text(isProbing, probeResults, total = MicProbe.CANDIDATES.size, outsideCall = probeWasOutsideCall)
+            ProbeStatusLine(status, error = !isProbing && probeResults.isNotEmpty() && probeWasOutsideCall)
             for ((source, peak) in probeResults) {
                 Text(
                     "$source  ${peak?.let { Format.levelBar(it, 8) + "  " + it } ?: "refused to open"}",
@@ -486,4 +487,24 @@ private fun LogCard(log: List<Diagnostics.Entry>, is24Hour: Boolean) {
             }
         }
     }
+}
+
+/** The measuring status line, for tests. */
+internal const val PROBE_STATUS_TAG = "probe-status"
+
+/**
+ * One node whose words change, so TalkBack announces each step: a polite live region. No height
+ * while there's nothing to say, since a node that newly appears isn't announced.
+ */
+@Composable
+internal fun ProbeStatusLine(text: String, error: Boolean) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .testTag(PROBE_STATUS_TAG)
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            .then(if (text.isEmpty()) Modifier.height(0.dp) else Modifier),
+    )
 }

@@ -92,8 +92,11 @@ where you are before you rely on it.
 
 Android-only, deliberately: this is telephony, and there is no iOS equivalent to port to. The
 logic that *is* worth testing — the call state machine, the file naming, the index, the
-formatting — is pure Kotlin with unit tests, so the interesting parts are covered without a
-device.
+formatting, the measuring status line — is pure Kotlin with unit tests, so the interesting parts
+are covered without a device. The one Compose test runs under Robolectric in the same task: the
+"Measure every source now" status is a polite live region, one node whose words change from
+"Measuring…" through "2 of 3 sources done" to the answer, so TalkBack says each step without
+the screen being re-read.
 
 The call state machine is the piece to read first (`call/CallMonitor.kt`). The sequences Android
 produces are not obvious: a missed call and an answered one differ only in the order of three
