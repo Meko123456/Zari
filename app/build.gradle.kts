@@ -5,7 +5,10 @@ plugins {
 
 android {
     namespace = "io.github.meko123456.zari"
+    // 37.1: Compose 1.13 (BOM 2026.11.01) ships AARs that declare it as their minimum, and a
+    // build on 37.0 stops at checkDebugAarMetadata. Needs the 37.1 platform, which AGP fetches on CI.
     compileSdk = 37
+    compileSdkMinor = 1
 
     defaultConfig {
         applicationId = "io.github.meko123456.zari"
