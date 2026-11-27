@@ -327,6 +327,5 @@ class RecordingsViewModel(application: Application) : AndroidViewModel(applicati
 
     override fun onCleared() {
         stop()
-        super.onCleared()
     }
 }
